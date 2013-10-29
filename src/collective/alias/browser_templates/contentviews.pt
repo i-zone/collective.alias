@@ -1,4 +1,4 @@
-<div i18n:domain="plone" 
+<div i18n:domain="plone"
      tal:omit-tag=""
      tal:condition="viewlet/showEditableBorder">
 
@@ -7,7 +7,7 @@
         <h5 class="hiddenStructure"
             tal:condition="view_actions"
             i18n:translate="heading_views">Views</h5>
-        
+
         <ul class="contentViews"
             id="content-views"
             i18n:domain="plone">
@@ -26,7 +26,11 @@
             </tal:views>
 
         </ul>
-        
+
     </tal:block>
 
 </div>
+
+<span class="alias"><strong>Achtung:</strong> Alias Objekt - <a tal:define="obj python: context.__dict__['_v_target'];
+                                                        objPath python:'/'.join(obj.getPhysicalPath())"
+                                            tal:attributes="href string: ${objPath}/edit">Edit</a></span>

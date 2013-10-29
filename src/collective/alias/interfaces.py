@@ -1,32 +1,59 @@
 from zope.interface import Interface
 from zope import schema
 
+from five import grok
+from zope.site.hooks import getSite
+from Products.CMFCore.interfaces import ISiteRoot
+from zope.schema.interfaces import IContextSourceBinder
+
 from plone.formwidget.contenttree import ObjPathSourceBinder
 from plone.supermodel import model
 from z3c.relationfield.schema import RelationChoice
 
 from collective.alias import MessageFactory as _
 
-
 class IAlias(model.Schema):
     """Schema interface. Note that the alias will also appear to provide the
     schema of the aliased object.
     """
-    
+
+    # fix for content above INavigationRoot e.g. from collective.lineage
+    @grok.provider(IContextSourceBinder)
+    def searchContent(context):
+
+        # getSide() returns INavigationRoot Object
+        siteroot = getSite()
+
+        # if INavigationRoot != ISideRoot
+        if not ISiteRoot.providedBy(context):
+            for item in getSite().aq_chain:
+                if ISiteRoot.providedBy(item):
+                    siteroot = item
+
+        path = '/'.join(siteroot.getPhysicalPath())
+        # all Languages
+        query = {"path": {'query': path},
+                 "Language": 'all'
+                }
+
+        return ObjPathSourceBinder(navigation_tree_query=query)(context)
+
     _aliasTarget = RelationChoice(
             title=_(u"Aliased object"),
-            description=_(u"Choose an object to alias"),
+            description=_(u"Choose content to alias"),
             required=True,
-            source=ObjPathSourceBinder({'is_default_page': (True, False,)}),
+            source=searchContent,
         )
-    
+            # default ObjPathSourceBinder restricted to default_pages
+            # source=ObjPathSourceBinder({'is_default_page': (True, False,)}),
+
     _aliasTitle = schema.TextLine(
             title=_(u"Title override"),
             description=_(u"If you want your alias to have a different title "
                            "than the aliased object, enter a title here."),
             required=False,
         )
-    
+
     _aliasTraversal = schema.Bool(
             title=_(u"Allow traversal"),
             description=_(u"If selected, children of the aliased object will "
@@ -43,7 +70,7 @@ class IAlias(model.Schema):
 class IAliasSettings(model.Schema):
     """Configuration settings used in registry.xml
     """
-    
+
     traversalTypes = schema.List(
             title=_(u"Traversal types"),
             description=_(u"List of types which by default allow traversal"),
@@ -51,7 +78,7 @@ class IAliasSettings(model.Schema):
             default=[],
             value_type=schema.Choice(vocabulary="collective.alias.PortalTypes"),
         )
-    
+
     aliasActions = schema.Set(
             title=_(u"Alias actions"),
             description=_(u"Ids of actions that are allowed on aliases"),
@@ -70,13 +97,13 @@ class IAliasInformation(Interface):
     """Adapt an object that has an alias to this interface to get alias
     information.
     """
-    
+
     def findAliases(interface=IAlias):
         """Return a generator of objects representing aliases of the
         context. The alias will provide the interface specified in
         'interface'.
         """
-    
+
     def findAliasIds(interface=IAlias):
         """Return a generator of alias intids representing aliases of the
         context. The alias will provide the interface specified in

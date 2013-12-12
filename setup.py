@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version = '1.2.5.iz1'
+version = '1.2.5.iz2'
 
 setup(name='collective.alias',
       version=version,
